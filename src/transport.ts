@@ -66,6 +66,7 @@ export const makeRequest = async <T>(
 
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     try {
+      // eslint-disable-next-line no-await-in-loop
       const response = await fetch(url, {
         ...options,
         headers: {
@@ -85,16 +86,19 @@ export const makeRequest = async <T>(
       }
 
       if (!response.ok) {
+        // eslint-disable-next-line no-await-in-loop
         const errorMessage = await parseErrorMessage(response);
         const shouldRetry =
           retryable && response.status >= 500 && response.status < 600 && attempt < maxRetries;
         if (shouldRetry) {
+          // eslint-disable-next-line no-await-in-loop
           await sleep(DEFAULT_BACKOFF_MS * (attempt + 1));
           continue;
         }
         throw new TaskForceAIError(errorMessage, response.status);
       }
 
+      // eslint-disable-next-line no-await-in-loop
       const data = (await response.json()) as unknown;
       return data as T;
     } catch (error) {
@@ -103,6 +107,7 @@ export const makeRequest = async <T>(
         throw new TaskForceAIError('Request timeout');
       }
       if (retryable && attempt < maxRetries) {
+        // eslint-disable-next-line no-await-in-loop
         await sleep(DEFAULT_BACKOFF_MS * (attempt + 1));
         continue;
       }

@@ -61,10 +61,12 @@ export class TaskForceAI {
   ) {
     for (let i = 0; i < max; i++) {
       if (sig?.aborted) throw new TaskForceAIError('Task polling cancelled');
+      // eslint-disable-next-line no-await-in-loop
       const s = await this.getTaskStatus(id);
       on?.(s);
       yield s;
       if (['completed', 'failed'].includes(s.status)) return;
+      // eslint-disable-next-line no-await-in-loop
       await Bun.sleep(ms);
     }
     throw new TaskForceAIError('Task did not complete within the expected time');
