@@ -1,0 +1,44 @@
+{
+  "name": "taskforceai-sdk",
+  "version": "1.2.0",
+  "description": "Official SDK for TaskForceAI multi-agent orchestration API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "bun test --preload ../../tests/bun-setup.ts",
+    "test:watch": "bun test --watch --preload ../../tests/bun-setup.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ai",
+    "multi-agent",
+    "orchestration",
+    "sdk",
+    "taskforceai"
+  ],
+  "author": "TaskForceAI",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ClayWarren/grok4fastheavy"
+  },
+  "bugs": {
+    "url": "https://github.com/ClayWarren/grok4fastheavy/issues"
+  },
+  "homepage": "https://taskforceai.chat",
+  "engines": {
+    "node": ">=24.12.0"
+  },
+  "dependencies": {
+    "@taskforce/shared": "workspace:*",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@taskforceai/toolchain": "workspace:*"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ]
+}
