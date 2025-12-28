@@ -1,4 +1,3 @@
-import { parseJsonSchema } from '@taskforce/shared/json/parse';
 import { afterEach, describe, expect, it, vi } from 'bun:test';
 import { z } from 'zod';
 
@@ -67,11 +66,11 @@ describe('TaskForceAI.makeRequest and helpers', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toBe('https://example.com/api/developer/run');
-    const parsedBodyResult = parseJsonSchema((options?.body as string) || '{}', requestBodySchema);
-    if (!parsedBodyResult.ok) {
+    const parsedBodyResult = requestBodySchema.safeParse(JSON.parse((options?.body as string) || '{}'));
+    if (!parsedBodyResult.success) {
       throw new Error(`Invalid request body JSON: ${parsedBodyResult.error}`);
     }
-    const parsedBody = parsedBodyResult.value;
+    const parsedBody = parsedBodyResult.data;
     expect(parsedBody).toEqual({
       prompt: 'Analyze data',
       options: { mock: true, silent: false },
@@ -97,11 +96,11 @@ describe('TaskForceAI.makeRequest and helpers', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [, options] = fetchMock.mock.calls[0];
-    const parsedBodyResult = parseJsonSchema((options?.body as string) || '{}', requestBodySchema);
-    if (!parsedBodyResult.ok) {
+    const parsedBodyResult = requestBodySchema.safeParse(JSON.parse((options?.body as string) || '{}'));
+    if (!parsedBodyResult.success) {
       throw new Error(`Invalid request body JSON: ${parsedBodyResult.error}`);
     }
-    const parsedBody = parsedBodyResult.value;
+    const parsedBody = parsedBodyResult.data;
     expect(parsedBody).toEqual({
       prompt: 'Summarize report',
       options: { mock: false, silent: false },

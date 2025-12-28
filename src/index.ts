@@ -9,6 +9,11 @@ import type {
 } from './types';
 import { VERSION } from './types';
 
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(() => resolve(), ms);
+  });
+
 export class TaskForceAI {
   private ak: string;
   private url: string;
@@ -67,7 +72,7 @@ export class TaskForceAI {
       yield s;
       if (['completed', 'failed'].includes(s.status)) return;
       // eslint-disable-next-line no-await-in-loop
-      await Bun.sleep(ms);
+      await sleep(ms);
     }
     throw new TaskForceAIError('Task did not complete within the expected time');
   }

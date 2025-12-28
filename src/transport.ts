@@ -1,5 +1,3 @@
-import { parseJsonSchema } from '@taskforce/shared/json/parse';
-import { z } from 'zod';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_BACKOFF_MS = 500;
@@ -18,18 +16,19 @@ const buildSignal = (timeoutMs: number, externalSignal?: AbortSignal): AbortSign
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
-const errorPayloadSchema = z.record(z.string(), z.unknown());
-
 const parseErrorMessage = async (response: Response): Promise<string> => {
   try {
     const errorText = await response.text();
-    const parsed = parseJsonSchema(errorText, errorPayloadSchema);
-    if (parsed.ok && isRecord(parsed.value)) {
-      const value = parsed.value['error'];
-      if (typeof value === 'string') {
-        return value;
+    try {
+      const parsed = JSON.parse(errorText) as unknown;
+      if (isRecord(parsed)) {
+        if (typeof parsed['error'] === 'string') {
+          return parsed['error'];
+        }
+        return `HTTP ${response.status}`;
       }
-      return `HTTP ${response.status}`;
+    } catch {
+      // Not JSON, fall back to text
     }
     if (errorText.trim().length > 0) return errorText;
   } catch {
