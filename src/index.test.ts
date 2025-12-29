@@ -66,7 +66,9 @@ describe('TaskForceAI.makeRequest and helpers', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toBe('https://example.com/api/developer/run');
-    const parsedBodyResult = requestBodySchema.safeParse(JSON.parse((options?.body as string) || '{}'));
+    const parsedBodyResult = requestBodySchema.safeParse(
+      JSON.parse((options?.body as string) || '{}')
+    );
     if (!parsedBodyResult.success) {
       throw new Error(`Invalid request body JSON: ${parsedBodyResult.error}`);
     }
@@ -96,7 +98,9 @@ describe('TaskForceAI.makeRequest and helpers', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [, options] = fetchMock.mock.calls[0];
-    const parsedBodyResult = requestBodySchema.safeParse(JSON.parse((options?.body as string) || '{}'));
+    const parsedBodyResult = requestBodySchema.safeParse(
+      JSON.parse((options?.body as string) || '{}')
+    );
     if (!parsedBodyResult.success) {
       throw new Error(`Invalid request body JSON: ${parsedBodyResult.error}`);
     }
