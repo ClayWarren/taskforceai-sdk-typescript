@@ -1,7 +1,7 @@
 {
   "name": "taskforceai-sdk",
-  "version": "1.2.0",
-  "description": "Official SDK for TaskForceAI multi-agent orchestration API",
+  "version": "1.2.1",
+  "description": "TypeScript SDK for TaskForceAI",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
