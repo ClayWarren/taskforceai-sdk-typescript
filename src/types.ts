@@ -1,10 +1,11 @@
 export const VERSION = '1.2.1';
 
 export interface TaskForceAIOptions {
-  apiKey: string;
+  apiKey?: string;
   baseUrl?: string;
   timeout?: number;
   responseHook?: TaskResponseHook;
+  mockMode?: boolean;
 }
 
 export type TaskSubmissionOptions = {

@@ -14,26 +14,61 @@ const sleep = (ms: number): Promise<void> =>
     setTimeout(() => resolve(), ms);
   });
 
+const MOCK_RESULT = 'This is a mock response. Configure your API key to get real results.';
+
 export class TaskForceAI {
   private ak: string;
   private url: string;
   private t: number;
   private rh?: (r: Response) => void;
+  private mm: boolean;
+  private mcc: Map<string, number> = new Map();
+
   constructor(o: TaskForceAIOptions) {
-    this.ak = o.apiKey;
+    this.mm = o.mockMode ?? false;
+    if (!this.mm && !o.apiKey) {
+      throw new TaskForceAIError('API key is required when not in mock mode');
+    }
+    this.ak = o.apiKey || '';
     this.url = o.baseUrl || 'https://taskforceai.chat/api/developer';
     this.t = o.timeout || def.timeout;
     this.rh = o.responseHook;
   }
 
-  private req = <T>(e: string, i: RequestInit = {}, r = false) =>
-    makeRequest<T>(
+  private mockResponse<T>(e: string, method: string): T {
+    if (method === 'POST' && e === '/run') {
+      const taskId = `mock-${Math.random().toString(36).slice(2, 10)}`;
+      this.mcc.set(taskId, 0);
+      return { taskId, status: 'processing' } as T;
+    }
+    if (e.startsWith('/status/')) {
+      const taskId = e.split('/').pop()!;
+      const count = this.mcc.get(taskId) || 0;
+      this.mcc.set(taskId, count + 1);
+      if (count < 1) {
+        return { taskId, status: 'processing', message: 'Mock task processing...' } as T;
+      }
+      return { taskId, status: 'completed', result: MOCK_RESULT } as T;
+    }
+    if (e.startsWith('/results/')) {
+      const taskId = e.split('/').pop()!;
+      return { taskId, status: 'completed', result: MOCK_RESULT } as T;
+    }
+    return { status: 'ok' } as T;
+  }
+
+  private req = <T>(e: string, i: RequestInit = {}, r = false): Promise<T> => {
+    if (this.mm) {
+      return Promise.resolve(this.mockResponse<T>(e, i.method || 'GET'));
+    }
+    return makeRequest<T>(
       e,
       i,
       { apiKey: this.ak, baseUrl: this.url, timeout: this.t, responseHook: this.rh },
       r,
       def.maxRetries
     );
+  };
 
   async submitTask(p: string, o: TaskSubmissionOptions = {}): Promise<string> {
     if (typeof p !== 'string' || !p.trim())

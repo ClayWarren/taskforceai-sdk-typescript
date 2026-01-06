@@ -38,6 +38,22 @@ for await (const status of stream) {
 }
 ```
 
+## Mock Mode
+
+Build and test your integration without an API key using mock mode:
+
+```typescript
+import { TaskForceAI } from 'taskforceai-sdk';
+
+// No API key required in mock mode
+const client = new TaskForceAI({ mockMode: true });
+
+const result = await client.runTask('Test your integration');
+console.log(result.result); // "This is a mock response. Configure your API key to get real results."
+```
+
+Mock mode simulates the full task lifecycle locally—no network requests are made. Tasks go through "processing" then "completed" states, making it easy to build UIs and test error handling before launch.
+
 ## API Reference
 
 ### TaskForceAI
@@ -52,10 +68,11 @@ constructor(options: TaskForceAIOptions)
 
 **Options:**
 
-- `apiKey` (required): Your API key
+- `apiKey` (required unless `mockMode` is true): Your API key
 - `baseUrl` (optional): API base URL (default: https://taskforceai.chat/api/developer)
 - `timeout` (optional): Request timeout in milliseconds (default: 30000)
 - `responseHook` (optional): Callback invoked with every raw `fetch` response
+- `mockMode` (optional): Enable mock mode for development without an API key (default: false)
 
 #### Methods
 
