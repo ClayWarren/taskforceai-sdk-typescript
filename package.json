@@ -1,6 +1,6 @@
 {
   "name": "taskforceai-sdk",
-  "version": "1.2.1",
+  "version": "0.10.0",
   "description": "TypeScript SDK for TaskForceAI",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,10 +27,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ClayWarren/grok4fastheavy.git"
+    "url": "git+https://github.com/ClayWarren/taskforceai-sdk-typescript.git"
   },
   "bugs": {
-    "url": "https://github.com/ClayWarren/grok4fastheavy/issues"
+    "url": "https://github.com/ClayWarren/taskforceai-sdk-typescript/issues"
   },
   "homepage": "https://taskforceai.chat",
   "engines": {
