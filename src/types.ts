@@ -10,6 +10,7 @@ export interface TaskForceAIOptions {
 
 export type TaskSubmissionOptions = {
   [key: string]: unknown;
+  modelId?: string;
   silent?: boolean;
   mock?: boolean;
   vercelAiKey?: string;
