@@ -8,6 +8,16 @@ import type {
   TaskSubmissionOptions,
 } from './types';
 import { VERSION } from './types';
+import type {
+  Thread,
+  ThreadMessage,
+  CreateThreadOptions,
+  ThreadListResponse,
+  ThreadMessagesResponse,
+  ThreadRunOptions,
+  ThreadRunResponse,
+} from './threads';
+import type { File as TFFile, FileUploadOptions, FileListResponse } from './files';
 
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => {
@@ -168,6 +178,101 @@ export class TaskForceAI {
   ) {
     return this.streamTaskStatus(await this.submitTask(p, o), ms, max, on, sig);
   }
+
+  // Thread methods
+  async createThread(options?: CreateThreadOptions): Promise<Thread> {
+    return this.req<Thread>('/threads', {
+      method: 'POST',
+      body: JSON.stringify(options || {}),
+    });
+  }
+
+  async listThreads(limit = 20, offset = 0): Promise<ThreadListResponse> {
+    return this.req<ThreadListResponse>(`/threads?limit=${limit}&offset=${offset}`);
+  }
+
+  async getThread(threadId: number): Promise<Thread> {
+    return this.req<Thread>(`/threads/${threadId}`);
+  }
+
+  async deleteThread(threadId: number): Promise<void> {
+    await this.req<void>(`/threads/${threadId}`, { method: 'DELETE' });
+  }
+
+  async getThreadMessages(
+    threadId: number,
+    limit = 50,
+    offset = 0
+  ): Promise<ThreadMessagesResponse> {
+    return this.req<ThreadMessagesResponse>(
+      `/threads/${threadId}/messages?limit=${limit}&offset=${offset}`
+    );
+  }
+
+  async runInThread(threadId: number, options: ThreadRunOptions): Promise<ThreadRunResponse> {
+    if (!options.prompt?.trim()) {
+      throw new TaskForceAIError('Prompt must be a non-empty string');
+    }
+    return this.req<ThreadRunResponse>(`/threads/${threadId}/runs`, {
+      method: 'POST',
+      body: JSON.stringify(options),
+    });
+  }
+
+  // File methods
+  async uploadFile(
+    filename: string,
+    content: Blob | ArrayBuffer,
+    options?: FileUploadOptions
+  ): Promise<TFFile> {
+    const formData = new FormData();
+    const blob = content instanceof Blob ? content : new Blob([content]);
+    formData.append('file', blob, filename);
+    if (options?.purpose) formData.append('purpose', options.purpose);
+    if (options?.mime_type) formData.append('mime_type', options.mime_type);
+
+    const url = `${this.url}/files`;
+    const headers: Record<string, string> = {};
+    if (this.ak) headers['Authorization'] = `Bearer ${this.ak}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new TaskForceAIError(`Failed to upload file: ${response.status}`);
+    }
+
+    return response.json() as Promise<TFFile>;
+  }
+
+  async listFiles(limit = 20, offset = 0): Promise<FileListResponse> {
+    return this.req<FileListResponse>(`/files?limit=${limit}&offset=${offset}`);
+  }
+
+  async getFile(fileId: string): Promise<TFFile> {
+    return this.req<TFFile>(`/files/${fileId}`);
+  }
+
+  async deleteFile(fileId: string): Promise<void> {
+    await this.req<void>(`/files/${fileId}`, { method: 'DELETE' });
+  }
+
+  async downloadFile(fileId: string): Promise<ArrayBuffer> {
+    const url = `${this.url}/files/${fileId}/content`;
+    const headers: Record<string, string> = {};
+    if (this.ak) headers['Authorization'] = `Bearer ${this.ak}`;
+
+    const response = await fetch(url, { headers });
+
+    if (!response.ok) {
+      throw new TaskForceAIError(`Failed to download file: ${response.status}`);
+    }
+
+    return response.arrayBuffer();
+  }
 }
 
 export {
@@ -181,3 +286,17 @@ export {
   VERSION,
   def as transportDefaults,
 };
+
+// Thread exports
+export type {
+  Thread,
+  ThreadMessage,
+  CreateThreadOptions,
+  ThreadListResponse,
+  ThreadMessagesResponse,
+  ThreadRunOptions,
+  ThreadRunResponse,
+} from './threads';
+
+// File exports
+export type { File as TFFile, FileUploadOptions, FileListResponse } from './files';
