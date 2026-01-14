@@ -34,7 +34,7 @@
   },
   "homepage": "https://taskforceai.chat",
   "engines": {
-    "node": ">=24.12.0"
+    "node": ">=24.13.0"
   },
   "dependencies": {},
   "devDependencies": {
