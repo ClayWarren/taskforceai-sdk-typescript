@@ -1,3 +1,13 @@
+import type { FileListResponse, FileUploadOptions, File as TFFile } from './files';
+import type {
+  CreateThreadOptions,
+  Thread,
+  ThreadListResponse,
+  ThreadMessage,
+  ThreadMessagesResponse,
+  ThreadRunOptions,
+  ThreadRunResponse,
+} from './threads';
 import { TaskForceAIError, transportDefaults as def, makeRequest } from './transport';
 import type {
   TaskForceAIOptions,
@@ -8,16 +18,6 @@ import type {
   TaskSubmissionOptions,
 } from './types';
 import { VERSION } from './types';
-import type {
-  Thread,
-  ThreadMessage,
-  CreateThreadOptions,
-  ThreadListResponse,
-  ThreadMessagesResponse,
-  ThreadRunOptions,
-  ThreadRunResponse,
-} from './threads';
-import type { File as TFFile, FileUploadOptions, FileListResponse } from './files';
 
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => {
