@@ -3,7 +3,6 @@ import type {
   CreateThreadOptions,
   Thread,
   ThreadListResponse,
-  ThreadMessage,
   ThreadMessagesResponse,
   ThreadRunOptions,
   ThreadRunResponse,
@@ -42,7 +41,9 @@ export class TaskForceAI {
     this.ak = o.apiKey || '';
     this.url = o.baseUrl || 'https://taskforceai.chat/api/developer';
     this.t = o.timeout || def.timeout;
-    this.rh = o.responseHook;
+    if (o.responseHook) {
+      this.rh = o.responseHook;
+    }
   }
 
   private mockResponse<T>(e: string, method: string): T {
@@ -71,10 +72,11 @@ export class TaskForceAI {
     if (this.mm) {
       return Promise.resolve(this.mockResponse<T>(e, i.method || 'GET'));
     }
+    const config = { apiKey: this.ak, baseUrl: this.url, timeout: this.t };
     return makeRequest<T>(
       e,
       i,
-      { apiKey: this.ak, baseUrl: this.url, timeout: this.t, responseHook: this.rh },
+      this.rh ? { ...config, responseHook: this.rh } : config,
       r,
       def.maxRetries
     );
