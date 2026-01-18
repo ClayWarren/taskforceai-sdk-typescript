@@ -70,7 +70,7 @@ describe('TaskForceAI.makeRequest and helpers', () => {
       JSON.parse((options?.body as string) || '{}')
     );
     if (!parsedBodyResult.success) {
-      throw new Error(`Invalid request body JSON: ${parsedBodyResult.error}`);
+      throw new Error(`Invalid request body JSON: ${parsedBodyResult.error.message}`);
     }
     const parsedBody = parsedBodyResult.data;
     expect(parsedBody).toEqual({
@@ -102,7 +102,7 @@ describe('TaskForceAI.makeRequest and helpers', () => {
       JSON.parse((options?.body as string) || '{}')
     );
     if (!parsedBodyResult.success) {
-      throw new Error(`Invalid request body JSON: ${parsedBodyResult.error}`);
+      throw new Error(`Invalid request body JSON: ${parsedBodyResult.error.message}`);
     }
     const parsedBody = parsedBodyResult.data;
     expect(parsedBody).toEqual({

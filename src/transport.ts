@@ -93,8 +93,7 @@ export const makeRequest = async <T>(
         throw new TaskForceAIError(errorMessage, response.status);
       }
 
-      const data = (await response.json()) as unknown;
-      return data as T;
+      return (await response.json()) as T;
     } catch (error) {
       if (error instanceof TaskForceAIError) throw error;
       if (error instanceof Error && error.name === 'AbortError') {
