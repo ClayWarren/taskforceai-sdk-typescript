@@ -69,7 +69,7 @@ export const makeRequest = async <T>(
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': apiKey,
-          ...options.headers,
+          ...(options.headers as Record<string, string>),
         },
         signal: buildSignal(timeout, options.signal as AbortSignal | undefined),
       });
