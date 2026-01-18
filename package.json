@@ -2,6 +2,27 @@
   "name": "taskforceai-sdk",
   "version": "1.3.1",
   "description": "TypeScript SDK for TaskForceAI",
+  "keywords": [
+    "ai",
+    "multi-agent",
+    "orchestration",
+    "sdk",
+    "taskforceai"
+  ],
+  "homepage": "https://taskforceai.chat",
+  "bugs": {
+    "url": "https://github.com/ClayWarren/taskforceai-sdk-typescript/issues"
+  },
+  "license": "MIT",
+  "author": "TaskForceAI",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ClayWarren/taskforceai-sdk-typescript.git"
+  },
+  "files": [
+    "README.md",
+    "dist/**/*"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -15,26 +36,6 @@
     "test": "bun test --preload ../../tests/bun-setup.ts",
     "test:watch": "bun test --watch --preload ../../tests/bun-setup.ts",
     "prepublishOnly": "npm run build"
-  },
-  "keywords": [
-    "ai",
-    "multi-agent",
-    "orchestration",
-    "sdk",
-    "taskforceai"
-  ],
-  "author": "TaskForceAI",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ClayWarren/taskforceai-sdk-typescript.git"
-  },
-  "bugs": {
-    "url": "https://github.com/ClayWarren/taskforceai-sdk-typescript/issues"
-  },
-  "homepage": "https://taskforceai.chat",
-  "engines": {
-    "node": ">=24.13.0"
   },
   "dependencies": {},
   "devDependencies": {
@@ -50,8 +51,7 @@
       "optional": true
     }
   },
-  "files": [
-    "dist/**/*",
-    "README.md"
-  ]
+  "engines": {
+    "node": ">=24.13.0"
+  }
 }
