@@ -86,19 +86,19 @@ export class TaskForceAI {
     if (typeof p !== 'string' || !p.trim())
       throw new TaskForceAIError('Prompt must be a non-empty string');
     const { vercelAiKey: v, silent: s = false, mock: m = false, ...rest } = o;
-    const body: any = { prompt: p, options: { silent: s, mock: m, ...rest } };
-    if (v) body.vercelAiKey = v;
+    const options: Record<string, unknown> = { silent: s, mock: m, ...rest };
+    const body = v ? { prompt: p, options, vercelAiKey: v } : { prompt: p, options };
     return (
       await this.req<{ taskId: string }>('/run', { method: 'POST', body: JSON.stringify(body) })
     ).taskId;
   }
 
-  async getTaskStatus(id: any) {
+  async getTaskStatus(id: string): Promise<TaskStatus> {
     if (!id || typeof id !== 'string')
       throw new TaskForceAIError('Task ID must be a non-empty string');
     return this.req<TaskStatus>(`/status/${id}`, {}, true);
   }
-  async getTaskResult(id: any) {
+  async getTaskResult(id: string): Promise<TaskResult> {
     if (!id || typeof id !== 'string')
       throw new TaskForceAIError('Task ID must be a non-empty string');
     return this.req<TaskResult>(`/results/${id}`);
@@ -147,7 +147,7 @@ export class TaskForceAI {
   }
 
   streamTaskStatus(
-    id: any,
+    id: string,
     ms = def.pollIntervalMs,
     max = def.maxPollAttempts,
     on?: TaskStatusCallback,

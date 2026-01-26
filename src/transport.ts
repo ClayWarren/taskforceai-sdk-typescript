@@ -16,24 +16,19 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
 const parseErrorMessage = async (response: Response): Promise<string> => {
-  try {
-    const errorText = await response.text();
-    try {
-      const parsed = JSON.parse(errorText) as unknown;
-      if (isRecord(parsed)) {
-        if (typeof parsed['error'] === 'string') {
-          return parsed['error'];
-        }
-        return `HTTP ${response.status}`;
+  const errorText = await response.text();
+  const trimmed = errorText.trim();
+  if (!trimmed) return `HTTP ${response.status}`;
+  if (trimmed.startsWith('{')) {
+    const parsed: unknown = JSON.parse(errorText);
+    if (isRecord(parsed)) {
+      if (typeof parsed['error'] === 'string') {
+        return parsed['error'];
       }
-    } catch {
-      // Not JSON, fall back to text
+      return `HTTP ${response.status}`;
     }
-    if (errorText.trim().length > 0) return errorText;
-  } catch {
-    /* ignore body errors */
   }
-  return `HTTP ${response.status}`;
+  return errorText;
 };
 
 export class TaskForceAIError extends Error {
@@ -75,11 +70,7 @@ export const makeRequest = async <T>(
       });
 
       if (responseHook) {
-        try {
-          responseHook(response.clone());
-        } catch {
-          /* ignore hook errors */
-        }
+        responseHook(response.clone());
       }
 
       if (!response.ok) {
