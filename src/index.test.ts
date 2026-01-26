@@ -64,7 +64,7 @@ describe('TaskForceAI.makeRequest and helpers', () => {
     expect(taskId).toBe('task_123');
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, options] = fetchMock.mock.calls[0];
+    const [url, options] = fetchMock.mock.calls[0] ?? [];
     expect(url).toBe('https://example.com/api/developer/run');
     const parsedBodyResult = requestBodySchema.safeParse(
       JSON.parse((options?.body as string) || '{}')
@@ -97,9 +97,9 @@ describe('TaskForceAI.makeRequest and helpers', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [, options] = fetchMock.mock.calls[0];
+    const [, options] = (fetchMock as unknown as { mock: { calls: [unknown, { body?: string }][] } }).mock.calls[0] ?? [];
     const parsedBodyResult = requestBodySchema.safeParse(
-      JSON.parse((options?.body as string) || '{}')
+      JSON.parse(options?.body || '{}')
     );
     if (!parsedBodyResult.success) {
       throw new Error(`Invalid request body JSON: ${parsedBodyResult.error.message}`);
@@ -252,7 +252,7 @@ describe('TaskForceAI task helpers', () => {
       .mockImplementation(async () => statuses.shift() as TaskStatus);
 
     const seen: TaskStatus[] = [];
-    const finalResult = await client.waitForCompletion('task', 5, 5, (status) => seen.push(status));
+    const finalResult = await client.waitForCompletion('task', 5 as 2000, 5 as 150, (status) => seen.push(status));
 
     expect(seen).toHaveLength(2);
     expect(finalResult).toEqual({ taskId: 'task', status: 'completed', result: 'done' });
@@ -287,7 +287,7 @@ describe('TaskForceAI task helpers', () => {
       status: 'processing',
     });
 
-    await expect(client.waitForCompletion('task', 5, 2)).rejects.toThrow(
+    await expect(client.waitForCompletion('task', 5 as 2000, 2 as 150)).rejects.toThrow(
       'Task did not complete within the expected time'
     );
   });
@@ -299,9 +299,9 @@ describe('TaskForceAI task helpers', () => {
       taskId: 'task-123',
       status: 'completed',
       result: 'ok',
-    } as TaskResult);
+    });
 
-    const result = await client.runTask('prompt', { mock: true }, 10, 2);
+    const result = await client.runTask('prompt', { mock: true }, 10 as 2000, 2 as 150);
 
     expect(result).toEqual({ taskId: 'task-123', status: 'completed', result: 'ok' });
     expect(submitSpy).toHaveBeenCalledWith('prompt', { mock: true });
@@ -319,12 +319,12 @@ describe('TaskForceAI task helpers', () => {
     );
 
     const received: TaskStatus[] = [];
-    for await (const status of client.streamTaskStatus('task', 0, 5)) {
+    for await (const status of client.streamTaskStatus('task', 0 as 2000, 5 as 150)) {
       received.push(status);
     }
 
     expect(received).toHaveLength(2);
-    expect(received[1].status).toBe('completed');
+    expect(received[1]!.status).toBe('completed');
   });
 
   it('supports cancelling a task status stream', async () => {
@@ -333,7 +333,7 @@ describe('TaskForceAI task helpers', () => {
       .mockResolvedValueOnce({ taskId: 'task', status: 'processing' })
       .mockResolvedValue({ taskId: 'task', status: 'processing' });
 
-    const stream = client.streamTaskStatus('task', 0, 5);
+    const stream = client.streamTaskStatus('task', 0 as 2000, 5 as 150);
     const iterator = stream[Symbol.asyncIterator]();
     const first = await iterator.next();
     expect(first.value.status).toBe('processing');
@@ -358,6 +358,6 @@ describe('TaskForceAI task helpers', () => {
 
     expect(stream.taskId).toBe('task-999');
     expect(statuses).toHaveLength(1);
-    expect(statuses[0].result).toBe('done');
+    expect(statuses[0]!.result).toBe('done');
   });
 });
