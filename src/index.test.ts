@@ -97,10 +97,10 @@ describe('TaskForceAI.makeRequest and helpers', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [, options] = (fetchMock as unknown as { mock: { calls: [unknown, { body?: string }][] } }).mock.calls[0] ?? [];
-    const parsedBodyResult = requestBodySchema.safeParse(
-      JSON.parse(options?.body || '{}')
-    );
+    const [, options] =
+      (fetchMock as unknown as { mock: { calls: [unknown, { body?: string }][] } }).mock.calls[0] ??
+      [];
+    const parsedBodyResult = requestBodySchema.safeParse(JSON.parse(options?.body || '{}'));
     if (!parsedBodyResult.success) {
       throw new Error(`Invalid request body JSON: ${parsedBodyResult.error.message}`);
     }
@@ -252,7 +252,9 @@ describe('TaskForceAI task helpers', () => {
       .mockImplementation(async () => statuses.shift() as TaskStatus);
 
     const seen: TaskStatus[] = [];
-    const finalResult = await client.waitForCompletion('task', 5 as 2000, 5 as 150, (status) => seen.push(status));
+    const finalResult = await client.waitForCompletion('task', 5 as 2000, 5 as 150, (status) =>
+      seen.push(status)
+    );
 
     expect(seen).toHaveLength(2);
     expect(finalResult).toEqual({ taskId: 'task', status: 'completed', result: 'done' });
@@ -324,7 +326,7 @@ describe('TaskForceAI task helpers', () => {
     }
 
     expect(received).toHaveLength(2);
-    expect(received[1]!.status).toBe('completed');
+    expect(received[1]?.status).toBe('completed');
   });
 
   it('supports cancelling a task status stream', async () => {
@@ -358,6 +360,6 @@ describe('TaskForceAI task helpers', () => {
 
     expect(stream.taskId).toBe('task-999');
     expect(statuses).toHaveLength(1);
-    expect(statuses[0]!.result).toBe('done');
+    expect(statuses[0]?.result).toBe('done');
   });
 });
