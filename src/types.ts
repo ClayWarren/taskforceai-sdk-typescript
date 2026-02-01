@@ -8,12 +8,23 @@ export interface TaskForceAIOptions {
   mockMode?: boolean;
 }
 
+export interface ImageAttachment {
+  /** Base64-encoded image data */
+  data: string;
+  /** Image MIME type (e.g. "image/jpeg", "image/png") */
+  mime_type: string;
+  /** Optional filename */
+  name?: string;
+}
+
 export type TaskSubmissionOptions = {
   [key: string]: unknown;
   modelId?: string;
   silent?: boolean;
   mock?: boolean;
   vercelAiKey?: string;
+  /** Image attachments to include with the prompt */
+  images?: ImageAttachment[];
 };
 
 export interface TaskStatus {

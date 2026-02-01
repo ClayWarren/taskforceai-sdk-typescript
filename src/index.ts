@@ -85,9 +85,14 @@ export class TaskForceAI {
   async submitTask(p: string, o: TaskSubmissionOptions = {}): Promise<string> {
     if (typeof p !== 'string' || !p.trim())
       throw new TaskForceAIError('Prompt must be a non-empty string');
-    const { vercelAiKey: v, silent: s = false, mock: m = false, ...rest } = o;
+    const { vercelAiKey: v, silent: s = false, mock: m = false, images, ...rest } = o;
     const options: Record<string, unknown> = { silent: s, mock: m, ...rest };
-    const body = v ? { prompt: p, options, vercelAiKey: v } : { prompt: p, options };
+    const body: Record<string, unknown> = v
+      ? { prompt: p, options, vercelAiKey: v }
+      : { prompt: p, options };
+    if (images && images.length > 0) {
+      body['attachments'] = images;
+    }
     return (
       await this.req<{ taskId: string }>('/run', { method: 'POST', body: JSON.stringify(body) })
     ).taskId;
@@ -286,6 +291,7 @@ export {
   VERSION,
   def as transportDefaults,
 };
+export type { ImageAttachment } from './types';
 
 // Thread exports
 export type {
