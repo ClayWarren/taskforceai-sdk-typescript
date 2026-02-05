@@ -238,7 +238,7 @@ export class TaskForceAI {
 
     const url = `${this.url}/files`;
     const headers: Record<string, string> = {};
-    if (this.ak) headers['Authorization'] = `Bearer ${this.ak}`;
+    if (this.ak) headers['x-api-key'] = this.ak;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -268,7 +268,7 @@ export class TaskForceAI {
   async downloadFile(fileId: string): Promise<ArrayBuffer> {
     const url = `${this.url}/files/${fileId}/content`;
     const headers: Record<string, string> = {};
-    if (this.ak) headers['Authorization'] = `Bearer ${this.ak}`;
+    if (this.ak) headers['x-api-key'] = this.ak;
 
     const response = await fetch(url, { headers });
 

@@ -7,6 +7,7 @@ type FetchResponse = {
   ok: boolean;
   status: number;
   json: () => Promise<Record<string, unknown>>;
+  arrayBuffer?: () => Promise<ArrayBuffer>;
   text?: () => Promise<string>;
   clone?: () => FetchResponse;
 };
@@ -361,5 +362,56 @@ describe('TaskForceAI task helpers', () => {
     expect(stream.taskId).toBe('task-999');
     expect(statuses).toHaveLength(1);
     expect(statuses[0]?.result).toBe('done');
+  });
+});
+
+describe('TaskForceAI file methods', () => {
+  it('uses x-api-key auth header for uploadFile requests', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ id: 'file_123', filename: 'report.txt' }),
+    });
+    globalWithFetch.fetch = fetchMock;
+
+    const client = new TaskForceAI({
+      apiKey: 'test-api-key',
+      baseUrl: 'https://example.com/api/developer',
+    });
+
+    await client.uploadFile('report.txt', new Blob(['hello']));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, options] = fetchMock.mock.calls[0] ?? [];
+    expect(url).toBe('https://example.com/api/developer/files');
+    const headers = (options?.headers ?? {}) as Record<string, string>;
+    expect(headers['x-api-key']).toBe('test-api-key');
+    expect(headers['Authorization']).toBeUndefined();
+  });
+
+  it('uses x-api-key auth header for downloadFile requests', async () => {
+    const payload = new Uint8Array([1, 2, 3]).buffer;
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      arrayBuffer: async () => payload,
+      json: async () => ({}),
+    });
+    globalWithFetch.fetch = fetchMock;
+
+    const client = new TaskForceAI({
+      apiKey: 'test-api-key',
+      baseUrl: 'https://example.com/api/developer',
+    });
+
+    const result = await client.downloadFile('file_123');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, options] = fetchMock.mock.calls[0] ?? [];
+    expect(url).toBe('https://example.com/api/developer/files/file_123/content');
+    const headers = (options?.headers ?? {}) as Record<string, string>;
+    expect(headers['x-api-key']).toBe('test-api-key');
+    expect(headers['Authorization']).toBeUndefined();
+    expect(result).toBe(payload);
   });
 });
