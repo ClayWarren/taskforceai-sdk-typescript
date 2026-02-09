@@ -15,6 +15,8 @@ export interface ImageAttachment {
   mime_type: string;
   /** Optional filename */
   name?: string;
+  /** Vision detail level: "auto", "low", or "high" (default: auto) */
+  detail?: 'auto' | 'low' | 'high';
 }
 
 export type TaskSubmissionOptions = {
