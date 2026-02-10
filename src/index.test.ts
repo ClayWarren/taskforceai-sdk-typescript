@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'bun:test';
 import { z } from 'zod';
 
-import { TaskForceAI, TaskForceAIError, TaskStatus } from './index';
+import { TaskForceAI, TaskStatus } from './index';
 
 type FetchResponse = {
   ok: boolean;
@@ -118,7 +118,7 @@ describe('TaskForceAI.makeRequest and helpers', () => {
     await expect(client.submitTask('')).rejects.toThrow('Prompt must be a non-empty string');
   });
 
-  it('extracts JSON error messages from failed responses', async () => {
+  it('extracts JSON error messages from failed responses with HTTP context', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
       status: 404,
@@ -128,12 +128,13 @@ describe('TaskForceAI.makeRequest and helpers', () => {
     globalWithFetch.fetch = fetchMock;
     const client = new TaskForceAI({ apiKey: 'key', baseUrl: 'https://example.com/api/developer' });
 
-    await expect(client.getTaskStatus('missing')).rejects.toThrowError(
-      new TaskForceAIError('Not found', 404)
-    );
+    await expect(client.getTaskStatus('missing')).rejects.toMatchObject({
+      message: 'HTTP 404: Not found',
+      statusCode: 404,
+    });
   });
 
-  it('falls back to status code when error payload lacks error field', async () => {
+  it('uses message field while preserving HTTP context', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
@@ -144,8 +145,24 @@ describe('TaskForceAI.makeRequest and helpers', () => {
     const client = new TaskForceAI({ apiKey: 'key', baseUrl: 'https://example.com/api/developer' });
 
     await expect(client.getTaskStatus('task')).rejects.toMatchObject({
-      message: 'HTTP 500',
+      message: 'HTTP 500: oops',
       statusCode: 500,
+    });
+  });
+
+  it('tolerates malformed JSON error payloads and keeps HTTP context', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      text: async () => '{"error":"bad gateway"',
+      json: async () => ({}),
+    });
+    globalWithFetch.fetch = fetchMock;
+    const client = new TaskForceAI({ apiKey: 'key', baseUrl: 'https://example.com/api/developer' });
+
+    await expect(client.getTaskStatus('task')).rejects.toMatchObject({
+      message: 'HTTP 502: {"error":"bad gateway"',
+      statusCode: 502,
     });
   });
 

@@ -15,20 +15,44 @@ const buildSignal = (timeoutMs: number, externalSignal?: AbortSignal): AbortSign
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
+const withHttpContext = (response: Response, detail?: string): string => {
+  const base = `HTTP ${response.status}`;
+  if (!detail) {
+    return base;
+  }
+  return `${base}: ${detail}`;
+};
+
 const parseErrorMessage = async (response: Response): Promise<string> => {
-  const errorText = await response.text();
+  let errorText = '';
+  try {
+    errorText = await response.text();
+  } catch {
+    return withHttpContext(response);
+  }
+
   const trimmed = errorText.trim();
-  if (!trimmed) return `HTTP ${response.status}`;
+  if (!trimmed) {
+    return withHttpContext(response);
+  }
+
   if (trimmed.startsWith('{')) {
-    const parsed: unknown = JSON.parse(errorText);
-    if (isRecord(parsed)) {
-      if (typeof parsed['error'] === 'string') {
-        return parsed['error'];
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      if (isRecord(parsed)) {
+        if (typeof parsed['error'] === 'string' && parsed['error'].trim()) {
+          return withHttpContext(response, parsed['error']);
+        }
+        if (typeof parsed['message'] === 'string' && parsed['message'].trim()) {
+          return withHttpContext(response, parsed['message']);
+        }
       }
-      return `HTTP ${response.status}`;
+    } catch {
+      return withHttpContext(response, trimmed);
     }
   }
-  return errorText;
+
+  return withHttpContext(response, trimmed);
 };
 
 export class TaskForceAIError extends Error {
