@@ -39,7 +39,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@taskforce/shared": "workspace:*",
+    "@taskforceai/shared": "workspace:*",
     "@taskforceai/toolchain": "workspace:*",
     "zod": "catalog:"
   },
