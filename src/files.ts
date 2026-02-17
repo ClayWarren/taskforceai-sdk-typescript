@@ -19,3 +19,22 @@ export interface FileListResponse {
   files: File[];
   total: number;
 }
+
+/** Response for direct-to-blob upload token creation. */
+export interface FileUploadTokenResponse {
+  file_id: string;
+  upload_url: string;
+  upload_token: string;
+  pathname: string;
+  expires_at: number;
+  max_bytes: number;
+}
+
+/** Request payload for completing a direct upload. */
+export interface FileUploadCompleteRequest {
+  file_id: string;
+  pathname: string;
+  filename: string;
+  purpose?: string;
+  mime_type?: string;
+}

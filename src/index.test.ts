@@ -383,6 +383,71 @@ describe('TaskForceAI task helpers', () => {
 });
 
 describe('TaskForceAI file methods', () => {
+  it('uses direct upload flow for files larger than 4MB', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createMockResponse({
+          file_id: 'file_456',
+          upload_url: 'https://blob.example.com/upload/path',
+          upload_token: 'blob-token',
+          pathname: 'developer-files/u1/file_456/big.pdf',
+          expires_at: 9999999999,
+          max_bytes: 10485760,
+        })
+      )
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({}),
+      })
+      .mockResolvedValueOnce(
+        createMockResponse({
+          id: 'file_456',
+          filename: 'big.pdf',
+          purpose: 'assistants',
+          bytes: 5000000,
+          created_at: '2026-01-01T00:00:00Z',
+          mime_type: 'application/pdf',
+        })
+      );
+    globalWithFetch.fetch = fetchMock;
+
+    const client = new TaskForceAI({
+      apiKey: 'test-api-key',
+      baseUrl: 'https://example.com/api/developer',
+    });
+
+    const largeBlob = new Blob([new Uint8Array(4 * 1024 * 1024 + 1)], {
+      type: 'application/pdf',
+    });
+    const result = await client.uploadFile('big.pdf', largeBlob);
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    const [tokenUrl, tokenOptions] = fetchMock.mock.calls[0] ?? [];
+    expect(tokenUrl).toBe('https://example.com/api/developer/files/upload-token');
+    const tokenHeaders = (tokenOptions?.headers ?? {}) as Record<string, string>;
+    expect(tokenHeaders['x-api-key']).toBe('test-api-key');
+
+    const [putUrl, putOptions] = fetchMock.mock.calls[1] ?? [];
+    expect(putUrl).toBe('https://blob.example.com/upload/path');
+    const putHeaders = (putOptions?.headers ?? {}) as Record<string, string>;
+    expect(putHeaders['Authorization']).toBe('Bearer blob-token');
+    expect(putHeaders['x-api-version']).toBe('9');
+    expect(putHeaders['X-Content-Type']).toBe('application/pdf');
+
+    const [completeUrl, completeOptions] = fetchMock.mock.calls[2] ?? [];
+    expect(completeUrl).toBe('https://example.com/api/developer/files/complete');
+    const completeBody = JSON.parse((completeOptions?.body as string) || '{}') as {
+      file_id?: string;
+      pathname?: string;
+    };
+    expect(completeBody.file_id).toBe('file_456');
+    expect(completeBody.pathname).toBe('developer-files/u1/file_456/big.pdf');
+    expect(result.id).toBe('file_456');
+  });
+
   it('uses x-api-key auth header for uploadFile requests', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

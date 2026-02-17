@@ -1,4 +1,10 @@
-import type { FileListResponse, FileUploadOptions, File as TFFile } from './files';
+import type {
+  FileListResponse,
+  FileUploadCompleteRequest,
+  FileUploadOptions,
+  FileUploadTokenResponse,
+  File as TFFile,
+} from './files';
 import type {
   CreateThreadOptions,
   Thread,
@@ -24,6 +30,7 @@ const sleep = (ms: number): Promise<void> =>
   });
 
 const MOCK_RESULT = 'This is a mock response. Configure your API key to get real results.';
+const DIRECT_UPLOAD_THRESHOLD_BYTES = 4 * 1024 * 1024;
 
 export class TaskForceAI {
   private ak: string;
@@ -230,11 +237,53 @@ export class TaskForceAI {
     content: Blob | ArrayBuffer,
     options?: FileUploadOptions
   ): Promise<TFFile> {
-    const formData = new FormData();
     const blob = content instanceof Blob ? content : new Blob([content]);
+    const purpose = options?.purpose ?? 'assistants';
+    const mimeType = options?.mime_type ?? (blob.type || 'application/octet-stream');
+
+    if (blob.size > DIRECT_UPLOAD_THRESHOLD_BYTES) {
+      const uploadToken = await this.req<FileUploadTokenResponse>('/files/upload-token', {
+        method: 'POST',
+        body: JSON.stringify({
+          filename,
+          purpose,
+          mime_type: mimeType,
+        }),
+      });
+
+      const uploadHeaders: Record<string, string> = {
+        Authorization: `Bearer ${uploadToken.upload_token}`,
+        'x-api-version': '9',
+        'X-Add-Random-Suffix': '0',
+        'X-Content-Type': mimeType,
+        'X-Access': 'public',
+      };
+      const uploadResponse = await fetch(uploadToken.upload_url, {
+        method: 'PUT',
+        headers: uploadHeaders,
+        body: blob,
+      });
+      if (!uploadResponse.ok) {
+        throw new TaskForceAIError(`Failed to upload file directly: ${uploadResponse.status}`);
+      }
+
+      const completePayload: FileUploadCompleteRequest = {
+        file_id: uploadToken.file_id,
+        pathname: uploadToken.pathname,
+        filename,
+        purpose,
+        mime_type: mimeType,
+      };
+      return this.req<TFFile>('/files/complete', {
+        method: 'POST',
+        body: JSON.stringify(completePayload),
+      });
+    }
+
+    const formData = new FormData();
     formData.append('file', blob, filename);
-    if (options?.purpose) formData.append('purpose', options.purpose);
-    if (options?.mime_type) formData.append('mime_type', options.mime_type);
+    formData.append('purpose', purpose);
+    formData.append('mime_type', mimeType);
 
     const url = `${this.url}/files`;
     const headers: Record<string, string> = {};
