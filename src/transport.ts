@@ -1,6 +1,7 @@
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_BACKOFF_MS = 500;
 const DEFAULT_MAX_RETRIES = 3;
+const DEFAULT_MAX_BACKOFF_MS = 8_000;
 
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => {
@@ -55,6 +56,54 @@ const parseErrorMessage = async (response: Response): Promise<string> => {
   return withHttpContext(response, trimmed);
 };
 
+const parseRetryAfterMs = (headerValue: string | null): number | null => {
+  if (!headerValue) {
+    return null;
+  }
+  const trimmed = headerValue.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const asSeconds = Number.parseInt(trimmed, 10);
+  if (!Number.isNaN(asSeconds)) {
+    return Math.max(asSeconds * 1_000, 0);
+  }
+
+  const asDate = Date.parse(trimmed);
+  if (Number.isNaN(asDate)) {
+    return null;
+  }
+  return Math.max(asDate - Date.now(), 0);
+};
+
+const withJitter = (ms: number): number => {
+  const jitterMax = Math.max(Math.floor(ms * 0.25), 1);
+  return ms + Math.floor(Math.random() * jitterMax);
+};
+
+const retryDelayMs = (attempt: number, retryAfterHeader: string | null): number => {
+  const retryAfterMs = parseRetryAfterMs(retryAfterHeader);
+  if (retryAfterMs !== null) {
+    return withJitter(retryAfterMs);
+  }
+
+  const exponential = Math.min(DEFAULT_BACKOFF_MS * 2 ** attempt, DEFAULT_MAX_BACKOFF_MS);
+  return withJitter(exponential);
+};
+
+const isRetryableStatus = (status: number): boolean =>
+  status === 408 || status === 429 || (status >= 500 && status < 600);
+
+const getRetryAfterHeader = (response: Response): string | null => {
+  const headers = (response as unknown as { headers?: { get?: (name: string) => string | null } })
+    .headers;
+  if (!headers || typeof headers.get !== 'function') {
+    return null;
+  }
+  return headers.get('retry-after');
+};
+
 export class TaskForceAIError extends Error {
   constructor(
     message: string,
@@ -100,10 +149,9 @@ export const makeRequest = async <T>(
 
       if (!response.ok) {
         const errorMessage = await parseErrorMessage(response);
-        const shouldRetry =
-          retryable && response.status >= 500 && response.status < 600 && attempt < maxRetries;
+        const shouldRetry = retryable && isRetryableStatus(response.status) && attempt < maxRetries;
         if (shouldRetry) {
-          await sleep(DEFAULT_BACKOFF_MS * (attempt + 1));
+          await sleep(retryDelayMs(attempt, getRetryAfterHeader(response)));
           continue;
         }
         throw new TaskForceAIError(errorMessage, response.status);
@@ -116,7 +164,7 @@ export const makeRequest = async <T>(
         throw new TaskForceAIError('Request timeout');
       }
       if (retryable && attempt < maxRetries) {
-        await sleep(DEFAULT_BACKOFF_MS * (attempt + 1));
+        await sleep(retryDelayMs(attempt, null));
         continue;
       }
       throw new TaskForceAIError(

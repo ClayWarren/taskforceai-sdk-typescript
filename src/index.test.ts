@@ -229,6 +229,26 @@ describe('TaskForceAI.makeRequest and helpers', () => {
     expect(hook).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it('retries retryable 429 responses and eventually succeeds', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        headers: { get: () => '0' },
+        text: async () => JSON.stringify({ error: 'rate limit' }),
+        json: async () => ({}),
+      })
+      .mockResolvedValueOnce(createMockResponse({ taskId: 'task', status: 'completed' }));
+    globalWithFetch.fetch = fetchMock;
+
+    const client = new TaskForceAI({ apiKey: 'key', baseUrl: 'https://example.com/api/developer' });
+    const status = await client.getTaskStatus('task');
+
+    expect(status.status).toBe('completed');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('TaskForceAI task helpers', () => {
