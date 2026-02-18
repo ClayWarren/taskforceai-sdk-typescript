@@ -184,7 +184,7 @@ describe('TaskForceAI.makeRequest and helpers', () => {
 
   it('converts AbortError into timeout error', async () => {
     vi.useRealTimers();
-    const fetchMock = vi.fn((_: unknown, init?: RequestInit) => {
+    const fetchMock = vi.fn((_url: unknown, init?: RequestInit) => {
       const signal = init?.signal as AbortSignal | undefined;
       let settled = false;
 
