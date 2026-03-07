@@ -113,6 +113,29 @@ describe('TaskForceAI.makeRequest and helpers', () => {
     });
   });
 
+
+  it('uses Authorization auth header for transport requests', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        createMockResponse({ taskId: 'task_123', status: 'processing', message: 'ok' })
+      );
+    globalWithFetch.fetch = fetchMock;
+
+    const client = new TaskForceAI({
+      apiKey: 'test-api-key',
+      baseUrl: 'https://example.com/api/developer',
+    });
+
+    await client.submitTask('Analyze data');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, options] = fetchMock.mock.calls[0] ?? [];
+    const headers = (options?.headers ?? {}) as Record<string, string>;
+    expect(headers['Authorization']).toBe('Bearer test-api-key');
+    expect(headers['x-api-key']).toBeUndefined();
+  });
+
   it('throws a TaskForceAIError when prompt is invalid', async () => {
     const client = new TaskForceAI({ apiKey: 'key' });
     await expect(client.submitTask('')).rejects.toThrow('Prompt must be a non-empty string');
@@ -448,7 +471,8 @@ describe('TaskForceAI file methods', () => {
     const [tokenUrl, tokenOptions] = fetchMock.mock.calls[0] ?? [];
     expect(tokenUrl).toBe('https://example.com/api/developer/files/upload-token');
     const tokenHeaders = (tokenOptions?.headers ?? {}) as Record<string, string>;
-    expect(tokenHeaders['x-api-key']).toBe('test-api-key');
+    expect(tokenHeaders['Authorization']).toBe('Bearer test-api-key');
+    expect(tokenHeaders['x-api-key']).toBeUndefined();
 
     const [putUrl, putOptions] = fetchMock.mock.calls[1] ?? [];
     expect(putUrl).toBe('https://blob.example.com/upload/path');
@@ -469,7 +493,7 @@ describe('TaskForceAI file methods', () => {
     expect(result.id).toBe('file_456');
   });
 
-  it('uses x-api-key auth header for uploadFile requests', async () => {
+  it('uses Authorization auth header for uploadFile requests', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -488,11 +512,11 @@ describe('TaskForceAI file methods', () => {
     const [url, options] = fetchMock.mock.calls[0] ?? [];
     expect(url).toBe('https://example.com/api/developer/files');
     const headers = (options?.headers ?? {}) as Record<string, string>;
-    expect(headers['x-api-key']).toBe('test-api-key');
-    expect(headers['Authorization']).toBeUndefined();
+    expect(headers['Authorization']).toBe('Bearer test-api-key');
+    expect(headers['x-api-key']).toBeUndefined();
   });
 
-  it('uses x-api-key auth header for downloadFile requests', async () => {
+  it('uses Authorization auth header for downloadFile requests', async () => {
     const payload = new Uint8Array([1, 2, 3]).buffer;
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -513,8 +537,8 @@ describe('TaskForceAI file methods', () => {
     const [url, options] = fetchMock.mock.calls[0] ?? [];
     expect(url).toBe('https://example.com/api/developer/files/file_123/content');
     const headers = (options?.headers ?? {}) as Record<string, string>;
-    expect(headers['x-api-key']).toBe('test-api-key');
-    expect(headers['Authorization']).toBeUndefined();
+    expect(headers['Authorization']).toBe('Bearer test-api-key');
+    expect(headers['x-api-key']).toBeUndefined();
     expect(result).toBe(payload);
   });
 });

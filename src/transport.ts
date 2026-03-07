@@ -136,7 +136,7 @@ export const makeRequest = async <T>(
         ...options,
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
+          Authorization: `Bearer ${apiKey}`,
           'X-SDK-Language': 'typescript',
           ...(options.headers as Record<string, string>),
         },
