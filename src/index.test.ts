@@ -456,6 +456,7 @@ describe('TaskForceAI file methods', () => {
     expect(putHeaders['Authorization']).toBe('Bearer blob-token');
     expect(putHeaders['x-api-version']).toBe('9');
     expect(putHeaders['X-Content-Type']).toBe('application/pdf');
+    expect(putHeaders['X-Access']).toBeUndefined();
 
     const [completeUrl, completeOptions] = fetchMock.mock.calls[2] ?? [];
     expect(completeUrl).toBe('https://example.com/api/developer/files/complete');
