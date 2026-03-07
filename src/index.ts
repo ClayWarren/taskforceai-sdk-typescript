@@ -256,7 +256,6 @@ export class TaskForceAI {
         'x-api-version': '9',
         'X-Add-Random-Suffix': '0',
         'X-Content-Type': mimeType,
-        'X-Access': 'public',
       };
       const uploadResponse = await fetch(uploadToken.upload_url, {
         method: 'PUT',
